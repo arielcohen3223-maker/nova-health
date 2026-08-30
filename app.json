@@ -1,0 +1,58 @@
+{
+  "expo": {
+    "name": "NOVA",
+    "slug": "nova-health",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "nova",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#FAFAFA"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "health.nova.app",
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "NOVA reads heart rate, HRV, sleep, and activity from Apple Health to build your personal baseline.",
+        "NSHealthUpdateUsageDescription": "NOVA may write wellness summaries to Apple Health.",
+        "NSCameraUsageDescription": "NOVA uses the camera to photograph meals for wellness context.",
+        "NSPhotoLibraryUsageDescription": "NOVA accesses photos to analyze meals."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0D9488"
+      },
+      "package": "health.nova.app",
+      "permissions": [
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_SLEEP",
+        "android.permission.CAMERA"
+      ]
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-dev-client",
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "NOVA reads heart rate, HRV, sleep, and activity from Apple Health.",
+          "NSHealthUpdateUsageDescription": "NOVA may write wellness summaries to Apple Health."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "NOVA uses the camera to log meals for wellness context."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_AFTER_eas_init"
+      }
+    }
+  }
+}
