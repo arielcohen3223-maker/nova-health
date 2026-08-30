@@ -26,9 +26,10 @@ import { HealthProvider, useHealth } from "./context/HealthContext";
 import { SubscriptionProvider } from "./context/SubscriptionContext";
 import { SettingsScreen, PrivacyScreen } from "./screens/SettingsScreen";
 import { formatSleep, formatSteps } from "./lib/health/metrics";
-import { askNova, analyzeMealImage, loadChatHistory } from "./lib/ai/novaAi";
+import { askNova, analyzeMealImage, loadChatHistory, type MealAnalysisResult } from "./lib/ai/novaAi";
 import { uploadBloodPdf } from "./lib/system/status";
 import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
 import * as DocumentPicker from "expo-document-picker";
 
 I18nManager.allowRTL(true);
@@ -373,38 +374,70 @@ function MealCapture({ go }: { go: (s: Screen) => void }) {
   const { userId } = useAuth();
   const m = t.meal;
   const [step, setStep] = useState<"camera" | "result">("camera");
-  const [meal, setMeal] = useState<{ dishName: string; calories: number; proteinG: number; fatG: number; carbsG: number; insight: string } | null>(null);
+  const [meal, setMeal] = useState<MealAnalysisResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
 
-  const pickAndAnalyze = async () => {
-    let base64: string | undefined;
+const pickAndAnalyze = async () => {
+  let imageUri: string | undefined;
 
-    if (Platform.OS === "web") {
-      const result = await ImagePicker.launchImageLibraryAsync({
+  if (Platform.OS === "web") {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      base64: false,
+      quality: 0.6,
+      mediaTypes: ["images"],
+    });
+
+    if (result.canceled || !result.assets[0]?.uri) return;
+    imageUri = result.assets[0].uri;
+  } else {
+    const camPerm = await ImagePicker.requestCameraPermissionsAsync();
+
+    const result = camPerm.granted
+      ? await ImagePicker.launchCameraAsync({
+          base64: false,
+          quality: 0.6,
+        })
+      : await ImagePicker.launchImageLibraryAsync({
+          base64: false,
+          quality: 0.6,
+          mediaTypes: ["images"],
+        });
+
+    if (result.canceled || !result.assets[0]?.uri) return;
+    imageUri = result.assets[0].uri;
+  }
+
+  setAnalyzing(true);
+
+  try {
+    const compressed = await ImageManipulator.manipulateAsync(
+      imageUri,
+      [{ resize: { width: 1024 } }],
+      {
+        compress: 0.45,
+        format: ImageManipulator.SaveFormat.JPEG,
         base64: true,
-        quality: 0.6,
-        mediaTypes: ["images"],
-      });
-      if (result.canceled || !result.assets[0]?.base64) return;
-      base64 = result.assets[0].base64;
-    } else {
-      const camPerm = await ImagePicker.requestCameraPermissionsAsync();
-      const result = camPerm.granted
-        ? await ImagePicker.launchCameraAsync({ base64: true, quality: 0.6 })
-        : await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.6, mediaTypes: ["images"] });
-      if (result.canceled || !result.assets[0]?.base64) return;
-      base64 = result.assets[0].base64;
+      }
+    );
+
+    if (!compressed.base64) {
+      throw new Error("Image compression failed");
     }
 
-    setAnalyzing(true);
-    try {
-      const analysis = await analyzeMealImage(base64, locale, userId);
-      setMeal(analysis);
-      setStep("result");
-    } finally {
-      setAnalyzing(false);
-    }
-  };
+    const analysis = await analyzeMealImage(
+      compressed.base64,
+      locale,
+      userId
+    );
+
+    setMeal(analysis);
+    setStep("result");
+  } catch (error) {
+    console.error("Meal analysis failed:", error);
+  } finally {
+    setAnalyzing(false);
+  }
+};
 
   return (
     <View style={styles.screenPad}>
@@ -446,7 +479,16 @@ function MealCapture({ go }: { go: (s: Screen) => void }) {
             </View>
             <View style={{ flex: 1, gap: 4 }}>
               <RtlText style={styles.cardTitle}>{meal?.dishName ?? m.dishName}</RtlText>
-              <Pill text={m.aiAnalysis} tone="orange" />
+              <Pill
+                text={meal?.source === "openai" ? m.aiAnalysisLive : m.aiAnalysisDemo}
+                tone={meal?.source === "openai" ? "green" : "orange"}
+              />
+              {meal?.hint === "needs_auth" && (
+                <RtlText style={styles.mealHint}>{m.hintNeedsAuth}</RtlText>
+              )}
+              {meal?.hint === "needs_openai" && (
+                <RtlText style={styles.mealHint}>{m.hintNeedsOpenAi}</RtlText>
+              )}
               <View style={styles.macroRow}>
                 <View style={styles.macro}><Text style={styles.macroVal}>{meal?.calories ?? 420}</Text><RtlText style={styles.macroLbl}>{m.kcal}</RtlText></View>
                 <View style={styles.macro}><Text style={styles.macroVal}>{meal?.proteinG ?? 18}g</Text><RtlText style={styles.macroLbl}>{m.protein}</RtlText></View>
@@ -1152,6 +1194,7 @@ const styles = StyleSheet.create({
   macroLbl: { fontSize: 10, color: C.muted },
   linkBtn: { alignItems: "center", paddingVertical: 8 },
   linkText: { color: C.green, fontWeight: "650", fontSize: 14 },
+  mealHint: { fontSize: 12, color: C.orange, marginTop: 4, lineHeight: 18 },
   breathingPad: { minHeight: Dimensions.get("window").height - 200 },
   stressCard: { gap: 8 },
   breatheCenter: { alignItems: "center", paddingVertical: 24 },

@@ -4,12 +4,20 @@ import type { ChatMessage, MealAnalysis } from "../types/health";
 import { appendLocalChat, loadLocalChat, saveLocalMeal } from "../storage/localStore";
 import { localNovaReply, simulateMealAnalysis } from "../demo/localEngine";
 
-async function invokeFunction<T>(name: string, body: Record<string, unknown>): Promise<T | null> {
+export type AiInvokeResult<T> = { data: T | null; error: string | null; needsAuth: boolean };
+
+async function invokeFunction<T>(name: string, body: Record<string, unknown>): Promise<AiInvokeResult<T>> {
   const supabase = getSupabase();
-  if (!supabase || !config.isConfigured) return null;
+  if (!supabase || !config.isConfigured) {
+    return { data: null, error: "not_configured", needsAuth: false };
+  }
   const { data, error } = await supabase.functions.invoke(name, { body });
-  if (error) return null;
-  return data as T;
+  if (error) {
+    const msg = error.message ?? String(error);
+    const needsAuth = /401|unauthorized|jwt/i.test(msg);
+    return { data: null, error: msg, needsAuth };
+  }
+  return { data: data as T, error: null, needsAuth: false };
 }
 
 export async function askNova(
@@ -23,10 +31,10 @@ export async function askNova(
     locale,
     context,
   });
-  if (remote?.reply) {
+  if (remote.data?.reply) {
     await appendLocalChat("user", message);
-    await appendLocalChat("assistant", remote.reply);
-    return remote.reply;
+    await appendLocalChat("assistant", remote.data.reply);
+    return remote.data.reply;
   }
 
   const reply = localNovaReply(message, locale, context?.metricsSummary);
@@ -35,13 +43,24 @@ export async function askNova(
   return reply;
 }
 
+export type MealAnalysisResult = MealAnalysis & {
+  source: "openai" | "demo";
+  hint?: "needs_auth" | "needs_openai" | null;
+};
+
 export async function analyzeMealImage(
   base64: string,
   locale: "he" | "en",
   userId?: string | null,
-): Promise<MealAnalysis> {
+): Promise<MealAnalysisResult> {
   const remote = await invokeFunction<MealAnalysis>("analyze-meal", { image: base64, locale });
-  const meal = remote?.dishName ? remote : simulateMealAnalysis(locale);
+  if (remote.data?.dishName) {
+    const meal: MealAnalysisResult = { ...remote.data, source: "openai", hint: null };
+    await saveLocalMeal(meal);
+    return meal;
+  }
+  const hint = remote.needsAuth ? "needs_auth" : remote.error ? "needs_openai" : null;
+  const meal: MealAnalysisResult = { ...simulateMealAnalysis(locale), source: "demo", hint };
   await saveLocalMeal(meal);
   return meal;
 }
