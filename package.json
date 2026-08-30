@@ -12,7 +12,7 @@
     "generate:icons": "node scripts/generate-icons.mjs",
     "copy:legal": "node scripts/copy-public.mjs",
     "enhance:web": "node scripts/enhance-web.mjs",
-    "build:web": "npm run generate:icons && expo export --platform web && npm run enhance:web",
+    "build:web": "node scripts/verify-build-env.mjs && npm run generate:icons && expo export --platform web && npm run enhance:web",
     "build:ios": "eas build --platform ios --profile production",
     "build:android": "eas build --platform android --profile production",
     "build:preview:ios": "eas build --platform ios --profile preview",
