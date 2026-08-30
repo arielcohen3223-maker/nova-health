@@ -84,8 +84,8 @@ export default ({ config }) => ({
       projectId: process.env.EAS_PROJECT_ID ?? "REPLACE_AFTER_eas_init",
     },
     privacyPolicyUrl:
-      process.env.EXPO_PUBLIC_PRIVACY_URL ?? "https://nova-health.vercel.app/legal/privacy.html",
-    termsUrl: process.env.EXPO_PUBLIC_TERMS_URL ?? "https://nova-health.vercel.app/legal/terms.html",
+      process.env.EXPO_PUBLIC_PRIVACY_URL ?? "https://nova-health-eight.vercel.app/legal/privacy.html",
+    termsUrl: process.env.EXPO_PUBLIC_TERMS_URL ?? "https://nova-health-eight.vercel.app/legal/terms.html",
   },
   owner: "arielcohen3223-maker",
 });

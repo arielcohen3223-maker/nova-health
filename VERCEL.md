@@ -35,22 +35,26 @@ Optional (after first deploy, update with your real Vercel URL):
 
 | Name | Value |
 |------|--------|
-| `EXPO_PUBLIC_PRIVACY_URL` | `https://YOUR-APP.vercel.app/legal/privacy.html` |
-| `EXPO_PUBLIC_TERMS_URL` | `https://YOUR-APP.vercel.app/legal/terms.html` |
+| `EXPO_PUBLIC_PRIVACY_URL` | `https://nova-health-eight.vercel.app/legal/privacy.html` |
+| `EXPO_PUBLIC_TERMS_URL` | `https://nova-health-eight.vercel.app/legal/terms.html` |
 
 > Without Supabase keys the app runs in **demo mode** (no real accounts).
 
 ### 5. Deploy
 Click **Deploy** — wait ~2–3 minutes.
 
+Your live URL: **https://nova-health-eight.vercel.app**
+
+> Do **not** use `nova-health.vercel.app` — that domain belongs to another project.
+
 Your URL will be something like:
-**`https://nova-health-xxxxx.vercel.app`**
+**`https://nova-health-eight.vercel.app`**
 
 ### 6. After deploy
 1. Copy your Vercel URL
 2. Supabase → **Authentication → URL Configuration**:
    - Site URL: your Vercel URL
-   - Redirect URLs: `https://YOUR-APP.vercel.app/**`
+   - Redirect URLs: `https://nova-health-eight.vercel.app/**`
 3. Update privacy/terms env vars with your URL → **Redeploy**
 
 ---

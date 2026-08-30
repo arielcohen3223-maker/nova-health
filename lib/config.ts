@@ -10,7 +10,7 @@ export const config = {
   /** Skip login for local UI testing */
   demoMode,
   requiresAuth: Boolean(supabaseUrl && supabaseAnonKey) && !demoMode,
-  privacyUrl: process.env.EXPO_PUBLIC_PRIVACY_URL?.trim() ?? "https://nova-health.vercel.app/legal/privacy.html",
-  termsUrl: process.env.EXPO_PUBLIC_TERMS_URL?.trim() ?? "https://nova-health.vercel.app/legal/terms.html",
+  privacyUrl: process.env.EXPO_PUBLIC_PRIVACY_URL?.trim() ?? "https://nova-health-eight.vercel.app/legal/privacy.html",
+  termsUrl: process.env.EXPO_PUBLIC_TERMS_URL?.trim() ?? "https://nova-health-eight.vercel.app/legal/terms.html",
   supportEmail: "support@nova.health",
 } as const;
