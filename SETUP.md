@@ -21,26 +21,44 @@
 
 ## שלב 1 — Supabase (15 דקות) → Auth + ענן + AI
 
-1. צרי פרויקט ב-[supabase.com](https://supabase.com)
-2. **SQL Editor** — הריצי לפי סדר:
-   - `supabase/migrations/001_initial_schema.sql`
-   - `supabase/migrations/002_meals_chat.sql`
-   - `supabase/migrations/003_storage.sql`
-3. **Edge Functions** — פרסי:
-   - `supabase/functions/nova-chat`
-   - `supabase/functions/analyze-meal`
-4. **Secrets** (Settings → Edge Functions):
-   ```
-   OPENAI_API_KEY=sk-...
-   ```
-5. **Vercel** → Project → Settings → Environment Variables:
-   ```
-   EXPO_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-   EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-   ```
-6. Redeploy ב-Vercel
+### א. צרי פרויקט
+1. [supabase.com/dashboard](https://supabase.com/dashboard) → **New project**
+2. שמרי את **Project URL** ו-**anon key** (Settings → API)
 
-אחרי זה: התחברות, סנכרון צ'אט/ארוחות/דם לענן, AI אמיתי.
+### ב. הריצי SQL (פעם אחת)
+**SQL Editor** → הדביקי את כל הקובץ `supabase/full_setup.sql` → **Run**
+
+### ג. Auth URLs
+**Authentication → URL Configuration:**
+- Site URL: `https://nova-health-eight.vercel.app`
+- Redirect URLs: `https://nova-health-eight.vercel.app/**`
+
+**Authentication → Providers → Email** — ודאי ש-Email מופעל.
+
+> לבדיקות קלות: **Authentication → Email → Confirm email** — כבוי (אפשר להפעיל בפרודקשן).
+
+### ד. מפתחות ב-Vercel
+**Settings → Environment Variables:**
+
+| Name | Value |
+|------|--------|
+| `EXPO_PUBLIC_SUPABASE_URL` | `https://xxxx.supabase.co` |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | `eyJ...` |
+| `EXPO_PUBLIC_DEMO_MODE` | `true` (בינתיים — האפליקציה עובדת בלי login) |
+
+→ **Deployments → Redeploy**
+
+### ה. Edge Functions + OpenAI
+```bash
+npx supabase login
+npx supabase link --project-ref YOUR_PROJECT_REF
+npx supabase secrets set OPENAI_API_KEY=sk-...
+npm run functions:deploy
+```
+
+**או** הריצי בטרמינל: `npm run setup:supabase` — הסקריפט יבקש מפתחות ויכין `.env` מקומי.
+
+כשהכל עובד — **מחקי** `EXPO_PUBLIC_DEMO_MODE` מ-Vercel והפעילי login אמיתי.
 
 ---
 

@@ -16,7 +16,8 @@
     "build:ios": "eas build --platform ios --profile production",
     "build:android": "eas build --platform android --profile production",
     "build:preview:ios": "eas build --platform ios --profile preview",
-    "functions:deploy": "supabase functions deploy nova-chat && supabase functions deploy analyze-meal"
+    "functions:deploy": "supabase functions deploy nova-chat && supabase functions deploy analyze-meal",
+    "setup:supabase": "powershell -ExecutionPolicy Bypass -File scripts/setup-supabase.ps1"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

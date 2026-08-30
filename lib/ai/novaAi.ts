@@ -26,10 +26,6 @@ export async function askNova(
   if (remote?.reply) {
     await appendLocalChat("user", message);
     await appendLocalChat("assistant", remote.reply);
-    if (userId && userId !== "demo-user") {
-      await saveChatMessage(userId, "user", message);
-      await saveChatMessage(userId, "assistant", remote.reply);
-    }
     return remote.reply;
   }
 
@@ -47,7 +43,6 @@ export async function analyzeMealImage(
   const remote = await invokeFunction<MealAnalysis>("analyze-meal", { image: base64, locale });
   const meal = remote?.dishName ? remote : simulateMealAnalysis(locale);
   await saveLocalMeal(meal);
-  if (userId && userId !== "demo-user") await saveMealLog(userId, meal);
   return meal;
 }
 
