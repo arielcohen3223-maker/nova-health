@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import type { Session, User } from "@supabase/supabase-js";
 import { config } from "../lib/config";
 import { getSupabase } from "../lib/supabase";
+import { getDisplayName, getLearningDays, setDisplayName } from "../lib/storage/localStore";
 
 export type Profile = {
   id: string;
@@ -11,13 +12,19 @@ export type Profile = {
   learning_days: number;
 };
 
+const DEMO_USER_ID = "demo-user";
+
 type AuthContextValue = {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
+  /** Real Supabase id or demo-user when in demo mode */
+  userId: string | null;
+  displayName: string | null;
   loading: boolean;
   configured: boolean;
   requiresAuth: boolean;
+  isDemo: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -53,8 +60,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!config.requiresAuth) {
-      setLoading(false);
-      return;
+      let mounted = true;
+      (async () => {
+        const [name, days] = await Promise.all([getDisplayName(), getLearningDays()]);
+        if (!mounted) return;
+        setProfile({
+          id: DEMO_USER_ID,
+          display_name: name ?? (config.demoMode ? "Guest" : "Noa"),
+          locale: "he",
+          onboarding_step: days >= 28 ? "active" : "learning",
+          learning_days: days,
+        });
+        setLoading(false);
+      })();
+      return () => {
+        mounted = false;
+      };
     }
 
     const supabase = getSupabase();
@@ -97,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = useCallback(async (email: string, password: string, displayName: string) => {
     const supabase = getSupabase();
     if (!supabase) throw new Error("Supabase not configured");
+    if (displayName.trim()) await setDisplayName(displayName.trim());
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -117,9 +139,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user: session?.user ?? null,
       session,
       profile,
+      userId: session?.user?.id ?? profile?.id ?? null,
+      displayName:
+        profile?.display_name ??
+        (session?.user?.user_metadata?.display_name as string | undefined) ??
+        null,
       loading,
       configured: config.isConfigured,
       requiresAuth: config.requiresAuth,
+      isDemo: !config.requiresAuth || !session,
       signIn,
       signUp,
       signOut,

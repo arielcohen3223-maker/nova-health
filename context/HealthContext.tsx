@@ -1,8 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { HealthMetrics } from "../lib/types/health";
-import { fetchHealthMetrics, isHealthKitAvailable, requestHealthKitPermission } from "../lib/health/healthService";
+import { fetchHealthMetrics, isHealthConnectAvailable, isHealthKitAvailable, requestHealthPermission } from "../lib/health/healthService";
 import { computeHealthScore, computeRecovery, MOCK_METRICS } from "../lib/health/metrics";
 import { loadLatestFromSupabase, syncMetricsToSupabase } from "../lib/health/sync";
+import { loadLocalMetrics, saveLocalMetrics } from "../lib/storage/localStore";
 import { useAuth } from "./AuthContext";
 
 type HealthContextValue = {
@@ -12,6 +13,7 @@ type HealthContextValue = {
   loading: boolean;
   healthConnected: boolean;
   healthKitAvailable: boolean;
+  healthConnectAvailable: boolean;
   connectHealth: () => Promise<boolean>;
   refresh: () => Promise<void>;
 };
@@ -19,7 +21,7 @@ type HealthContextValue = {
 const HealthContext = createContext<HealthContextValue | null>(null);
 
 export function HealthProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { userId } = useAuth();
   const [metrics, setMetrics] = useState<HealthMetrics>(MOCK_METRICS);
   const [loading, setLoading] = useState(false);
   const [healthConnected, setHealthConnected] = useState(false);
@@ -27,30 +29,39 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      if (user?.id) {
-        const cached = await loadLatestFromSupabase(user.id);
+      if (userId && userId !== "demo-user") {
+        const cached = await loadLatestFromSupabase(userId);
         if (cached) {
           setMetrics(cached);
+          await saveLocalMetrics(cached);
+          setLoading(false);
+          return;
+        }
+      } else {
+        const local = await loadLocalMetrics();
+        if (local) {
+          setMetrics(local);
           setLoading(false);
           return;
         }
       }
       const latest = await fetchHealthMetrics();
       setMetrics(latest);
-      if (user?.id && latest.source !== "mock") {
-        await syncMetricsToSupabase(user.id, latest);
+      await saveLocalMetrics(latest);
+      if (userId && userId !== "demo-user" && latest.source !== "mock") {
+        await syncMetricsToSupabase(userId, latest);
       }
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [userId]);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
 
   const connectHealth = useCallback(async () => {
-    const ok = await requestHealthKitPermission();
+    const ok = await requestHealthPermission();
     setHealthConnected(ok);
     if (ok) await refresh();
     return ok;
@@ -64,6 +75,7 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       loading,
       healthConnected,
       healthKitAvailable: isHealthKitAvailable(),
+      healthConnectAvailable: isHealthConnectAvailable(),
       connectHealth,
       refresh,
     }),

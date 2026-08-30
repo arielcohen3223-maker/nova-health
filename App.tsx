@@ -26,7 +26,8 @@ import { HealthProvider, useHealth } from "./context/HealthContext";
 import { SubscriptionProvider } from "./context/SubscriptionContext";
 import { SettingsScreen, PrivacyScreen } from "./screens/SettingsScreen";
 import { formatSleep, formatSteps } from "./lib/health/metrics";
-import { askNova, analyzeMealImage, saveMealLog } from "./lib/ai/novaAi";
+import { askNova, analyzeMealImage, loadChatHistory } from "./lib/ai/novaAi";
+import { uploadBloodPdf } from "./lib/system/status";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 
@@ -221,7 +222,8 @@ function QuickAction({ icon, label, onPress, tone = "green" }: { icon: IconName;
 
 function Welcome({ go }: { go: (s: Screen) => void }) {
   const { t } = useLocale();
-  const { connectHealth, healthKitAvailable, healthConnected } = useHealth();
+  const { connectHealth, healthKitAvailable, healthConnectAvailable, healthConnected } = useHealth();
+  const healthAvailable = healthKitAvailable || healthConnectAvailable;
   const watches = [
     ["logo-apple", "Apple Watch"],
     ["watch-outline", "Garmin"],
@@ -254,8 +256,13 @@ function Welcome({ go }: { go: (s: Screen) => void }) {
         <Ionicons name="shield-checkmark-outline" color={C.green} size={18} />
         <RtlText style={styles.disclaimerText}>{t.disclaimer}</RtlText>
       </View>
-      {healthKitAvailable && !healthConnected && (
-        <PrimaryButton title={t.settings.connect} onPress={() => connectHealth()} icon="heart-outline" light />
+      {healthAvailable && !healthConnected && (
+        <PrimaryButton
+          title={healthConnectAvailable ? t.settings.connectHealthConnect : t.settings.connect}
+          onPress={() => connectHealth()}
+          icon="heart-outline"
+          light
+        />
       )}
       <PrimaryButton title={t.welcome.start} onPress={() => go("learning")} />
     </LinearGradient>
@@ -363,22 +370,36 @@ function Home({ go }: { go: (s: Screen) => void }) {
 
 function MealCapture({ go }: { go: (s: Screen) => void }) {
   const { t, locale } = useLocale();
-  const { user } = useAuth();
+  const { userId } = useAuth();
   const m = t.meal;
   const [step, setStep] = useState<"camera" | "result">("camera");
   const [meal, setMeal] = useState<{ dishName: string; calories: number; proteinG: number; fatG: number; carbsG: number; insight: string } | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
 
   const pickAndAnalyze = async () => {
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) return;
-    const result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.6 });
-    if (result.canceled || !result.assets[0]?.base64) return;
+    let base64: string | undefined;
+
+    if (Platform.OS === "web") {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        base64: true,
+        quality: 0.6,
+        mediaTypes: ["images"],
+      });
+      if (result.canceled || !result.assets[0]?.base64) return;
+      base64 = result.assets[0].base64;
+    } else {
+      const camPerm = await ImagePicker.requestCameraPermissionsAsync();
+      const result = camPerm.granted
+        ? await ImagePicker.launchCameraAsync({ base64: true, quality: 0.6 })
+        : await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.6, mediaTypes: ["images"] });
+      if (result.canceled || !result.assets[0]?.base64) return;
+      base64 = result.assets[0].base64;
+    }
+
     setAnalyzing(true);
     try {
-      const analysis = await analyzeMealImage(result.assets[0].base64, locale);
+      const analysis = await analyzeMealImage(base64, locale, userId);
       setMeal(analysis);
-      if (user?.id) await saveMealLog(user.id, analysis);
       setStep("result");
     } finally {
       setAnalyzing(false);
@@ -698,13 +719,23 @@ function Report() {
 
 function Blood() {
   const { t } = useLocale();
+  const { userId } = useAuth();
   const b = t.blood;
   const [uploaded, setUploaded] = useState<string | null>(null);
+  const [uploadMode, setUploadMode] = useState<"cloud" | "local" | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const pickPdf = async () => {
     const result = await DocumentPicker.getDocumentAsync({ type: "application/pdf", copyToCacheDirectory: true });
-    if (!result.canceled && result.assets[0]?.name) {
-      setUploaded(result.assets[0].name);
+    if (result.canceled || !result.assets[0]?.name) return;
+    const asset = result.assets[0];
+    setUploading(true);
+    try {
+      const { mode } = await uploadBloodPdf(userId, asset.uri, asset.name);
+      setUploaded(asset.name);
+      setUploadMode(mode);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -714,8 +745,20 @@ function Blood() {
       <LinearGradient colors={[...theme.gradientUpload]} style={styles.uploadCard}>
         <View style={styles.uploadIcon}><Ionicons name="cloud-upload-outline" size={30} color={C.orange} /></View>
         <RtlText style={styles.cardTitle}>{b.uploadTitle}</RtlText>
-        <RtlText style={styles.mutedText}>{uploaded ?? b.uploadSub}</RtlText>
-        <Pressable onPress={pickPdf} style={styles.uploadButton}><RtlText style={styles.uploadButtonText}>{b.uploadBtn}</RtlText></Pressable>
+        <RtlText style={styles.mutedText}>
+          {uploaded
+            ? uploadMode === "cloud"
+              ? b.uploadCloud.replace("{name}", uploaded)
+              : b.uploadLocal.replace("{name}", uploaded)
+            : b.uploadSub}
+        </RtlText>
+        <Pressable onPress={pickPdf} disabled={uploading} style={styles.uploadButton}>
+          {uploading ? (
+            <ActivityIndicator color={theme.onPrimary} />
+          ) : (
+            <RtlText style={styles.uploadButtonText}>{uploaded ? b.uploadAgain : b.uploadBtn}</RtlText>
+          )}
+        </Pressable>
       </LinearGradient>
       <RtlText style={styles.sectionTitle}>{b.vitaminD}</RtlText>
       <Card>
@@ -761,12 +804,29 @@ function Timeline() {
 
 function Chat() {
   const { t, isRtl, locale } = useLocale();
-  const { user } = useAuth();
+  const { userId, displayName } = useAuth();
   const { metrics } = useHealth();
   const c = t.chat;
   const [value, setValue] = useState("");
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; text: string }[]>([]);
   const [thinking, setThinking] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const history = await loadChatHistory(userId);
+      if (!mounted || !history.length) {
+        if (mounted) setHistoryLoaded(true);
+        return;
+      }
+      setMessages(history.map(m => ({ role: m.role, text: m.content })));
+      if (mounted) setHistoryLoaded(true);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [userId]);
 
   const send = async (text?: string) => {
     const q = (text ?? value).trim();
@@ -776,7 +836,7 @@ function Chat() {
     setThinking(true);
     try {
       const ctx = `RHR ${metrics.restingHr}, HRV ${metrics.hrv}, sleep ${metrics.sleepHours}h, stress ${metrics.stressScore}`;
-      const reply = await askNova(q, locale, { metricsSummary: ctx });
+      const reply = await askNova(q, locale, { metricsSummary: ctx }, userId);
       setMessages(prev => [...prev, { role: "assistant", text: reply }]);
     } finally {
       setThinking(false);
@@ -788,14 +848,14 @@ function Chat() {
       <ScreenHeader title={c.title} eyebrow={c.eyebrow} right={<IconBubble name="sparkles-outline" />} />
       <View style={styles.chatIntro}>
         <View style={styles.aiAvatar}><Text style={styles.aiAvatarText}>N</Text></View>
-        <RtlText style={styles.chatGreeting}>{c.greeting.replace(/נועה|Noa/i, user?.user_metadata?.display_name?.split(" ")[0] ?? (locale === "he" ? "נועה" : "Noa"))}</RtlText>
+        <RtlText style={styles.chatGreeting}>{c.greeting.replace(/נועה|Noa/i, displayName?.split(" ")[0] ?? (locale === "he" ? "נועה" : "Noa"))}</RtlText>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.questionRow}>
         {c.chips.map(q => (
           <Pressable key={q} onPress={() => send(q)} style={styles.questionChip}><RtlText style={styles.questionText}>{q}</RtlText></Pressable>
         ))}
       </ScrollView>
-      {messages.length === 0 && (
+      {messages.length === 0 && historyLoaded && (
         <>
           <View style={styles.userBubble}><RtlText style={styles.userBubbleText}>{c.userQ}</RtlText></View>
           <View style={styles.novaMessage}>

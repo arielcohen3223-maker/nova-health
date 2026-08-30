@@ -85,7 +85,64 @@ export function isHealthKitAvailable(): boolean {
   return Platform.OS === "ios";
 }
 
+export function isHealthConnectAvailable(): boolean {
+  return Platform.OS === "android";
+}
+
+/** Samsung / Galaxy — native APK + Health Connect (not Web) */
+export async function fetchFromHealthConnect(): Promise<HealthMetrics | null> {
+  if (Platform.OS !== "android") return null;
+  try {
+    const { readRecords } = require("react-native-health-connect");
+    const now = new Date();
+    const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const hr = await readRecords("HeartRate", { timeRangeFilter: { operator: "between", startTime: dayAgo.toISOString(), endTime: now.toISOString() } });
+    const steps = await readRecords("Steps", { timeRangeFilter: { operator: "between", startTime: dayAgo.toISOString(), endTime: now.toISOString() } });
+    const restingHr = hr?.records?.length
+      ? Math.round(hr.records.reduce((s: number, r: { beatsPerMinute: number }) => s + r.beatsPerMinute, 0) / hr.records.length)
+      : null;
+    const stepCount = steps?.records?.reduce((s: number, r: { count: number }) => s + r.count, 0) ?? null;
+    return {
+      restingHr,
+      hrv: null,
+      sleepHours: null,
+      steps: stepCount != null ? Math.round(stepCount) : null,
+      bodyTemp: null,
+      stressScore: null,
+      recordedAt: now.toISOString(),
+      source: "health_connect",
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function requestHealthConnectPermission(): Promise<boolean> {
+  if (Platform.OS !== "android") return false;
+  try {
+    const { initialize, requestPermission } = require("react-native-health-connect");
+    await initialize();
+    await requestPermission([
+      { accessType: "read", recordType: "HeartRate" },
+      { accessType: "read", recordType: "Steps" },
+      { accessType: "read", recordType: "SleepSession" },
+    ]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function fetchHealthMetrics(): Promise<HealthMetrics> {
   const fromKit = await fetchFromHealthKit();
-  return fromKit ?? { ...MOCK_METRICS, recordedAt: new Date().toISOString() };
+  if (fromKit) return fromKit;
+  const fromHc = await fetchFromHealthConnect();
+  if (fromHc) return fromHc;
+  return { ...MOCK_METRICS, recordedAt: new Date().toISOString() };
+}
+
+export async function requestHealthPermission(): Promise<boolean> {
+  if (Platform.OS === "ios") return requestHealthKitPermission();
+  if (Platform.OS === "android") return requestHealthConnectPermission();
+  return false;
 }

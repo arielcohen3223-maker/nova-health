@@ -1,4 +1,4 @@
-export type HealthSource = "healthkit" | "health_connect" | "mock" | "supabase";
+export type HealthSource = "healthkit" | "health_connect" | "mock" | "supabase" | "manual" | "local";
 
 export type HealthMetrics = {
   restingHr: number | null;

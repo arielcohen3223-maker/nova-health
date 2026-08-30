@@ -21,19 +21,19 @@ type SubscriptionContextValue = {
 const SubscriptionContext = createContext<SubscriptionContextValue | null>(null);
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { userId } = useAuth();
   const [tier, setTier] = useState<SubscriptionTier>("free");
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      await initPurchases(user?.id);
+      await initPurchases(userId ?? undefined);
       setTier(await getSubscriptionTier());
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [userId]);
 
   useEffect(() => {
     refresh();
