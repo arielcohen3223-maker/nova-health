@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { theme } from "../theme";
@@ -7,6 +7,7 @@ import { useLocale } from "../i18n/LocaleContext";
 import { useAuth } from "../context/AuthContext";
 import { useHealth } from "../context/HealthContext";
 import { useSubscription } from "../context/SubscriptionContext";
+import { config } from "../lib/config";
 import type { Screen } from "../i18n/screens";
 
 function RtlText({ children, style }: { children: React.ReactNode; style?: any }) {
@@ -88,9 +89,14 @@ export function SettingsScreen({ go }: { go: (s: Screen) => void }) {
         )}
       </View>
 
-      <Pressable onPress={() => go("privacy")} style={styles.row}>
+      <Pressable onPress={() => Linking.openURL(config.privacyUrl)} style={styles.row}>
         <Ionicons name="document-text-outline" size={20} color={theme.primary} />
         <RtlText style={styles.rowText}>{t.settings.privacy}</RtlText>
+        <Ionicons name="chevron-back" size={18} color={theme.muted} />
+      </Pressable>
+      <Pressable onPress={() => Linking.openURL(config.termsUrl)} style={styles.row}>
+        <Ionicons name="reader-outline" size={20} color={theme.primary} />
+        <RtlText style={styles.rowText}>{t.settings.terms}</RtlText>
         <Ionicons name="chevron-back" size={18} color={theme.muted} />
       </Pressable>
     </ScrollView>

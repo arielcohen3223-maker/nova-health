@@ -4,7 +4,7 @@ export type TranslationKeys = typeof he;
 
 const he = {
   langToggle: "EN",
-  menuTitle: "מסכי הפרוטוטייפ",
+  menuTitle: "כל המסכים",
   disclaimer: "תובנות בריאות אישיות — לא אבחון רפואי",
   signOut: "התנתקות",
   healthScore: "ציון הבריאות",
@@ -54,6 +54,11 @@ const he = {
     noAccount: "אין חשבון? הרשמה",
     hasAccount: "יש חשבון? התחברות",
     checkEmail: "נשלח אימייל לאימות — אשרי ואז התחברי.",
+    agreeTerms: "אני מסכימ/ה ל",
+    termsLink: "תנאי השימוש",
+    and: "ו",
+    privacyLink: "מדיניות הפרטיות",
+    mustAgree: "יש לאשר את תנאי השימוש",
     errors: {
       required: "מלאי אימייל וסיסמה",
       passwordShort: "הסיסמה חייבת להכיל לפחות 8 תווים",
@@ -253,6 +258,7 @@ const he = {
     upgradePro: "שדרוג ל-Pro",
     restore: "שחזור רכישות",
     privacy: "מדיניות פרטיות",
+    terms: "תנאי שימוש",
   },
 
   privacy: {
@@ -301,7 +307,7 @@ const he = {
 
 const en: TranslationKeys = {
   langToggle: "עב",
-  menuTitle: "Prototype screens",
+  menuTitle: "All screens",
   disclaimer: "Personal wellness insights — not a medical diagnosis",
   signOut: "Sign out",
   healthScore: "Health score",
@@ -351,6 +357,11 @@ const en: TranslationKeys = {
     noAccount: "No account? Sign up",
     hasAccount: "Have an account? Sign in",
     checkEmail: "Check your email to confirm, then sign in.",
+    agreeTerms: "I agree to the",
+    termsLink: "Terms of Use",
+    and: "and",
+    privacyLink: "Privacy Policy",
+    mustAgree: "You must accept the terms",
     errors: {
       required: "Enter email and password",
       passwordShort: "Password must be at least 8 characters",
@@ -550,6 +561,7 @@ const en: TranslationKeys = {
     upgradePro: "Upgrade to Pro",
     restore: "Restore purchases",
     privacy: "Privacy policy",
+    terms: "Terms of use",
   },
 
   privacy: {

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import {
   ActivityIndicator,
   I18nManager,
+  Linking,
   Pressable,
   StyleSheet,
   Text,
@@ -14,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { theme } from "../theme";
 import { useLocale } from "../i18n/LocaleContext";
 import { useAuth } from "../context/AuthContext";
+import { config } from "../lib/config";
 
 function RtlText({ children, style }: { children: React.ReactNode; style?: any }) {
   const { isRtl } = useLocale();
@@ -30,12 +32,17 @@ export function AuthScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [agreed, setAgreed] = useState(false);
 
   const submit = async () => {
     setError(null);
     setInfo(null);
     if (!email.trim() || !password) {
       setError(t.auth.errors.required);
+      return;
+    }
+    if (mode === "signUp" && !agreed) {
+      setError(t.auth.mustAgree);
       return;
     }
     if (mode === "signUp" && password.length < 8) {
@@ -109,6 +116,18 @@ export function AuthScreen() {
             secureTextEntry
             autoCapitalize="none"
           />
+
+          {mode === "signUp" && (
+            <Pressable onPress={() => setAgreed(!agreed)} style={styles.termsRow}>
+              <Ionicons name={agreed ? "checkbox" : "square-outline"} size={22} color={agreed ? theme.primary : theme.muted} />
+              <Text style={[styles.termsText, isRtl ? styles.rtl : styles.ltr]}>
+                {t.auth.agreeTerms}{" "}
+                <Text style={styles.termsLink} onPress={() => Linking.openURL(config.termsUrl)}>{t.auth.termsLink}</Text>
+                {" "}{t.auth.and}{" "}
+                <Text style={styles.termsLink} onPress={() => Linking.openURL(config.privacyUrl)}>{t.auth.privacyLink}</Text>
+              </Text>
+            </Pressable>
+          )}
 
           {error && <RtlText style={styles.error}>{error}</RtlText>}
           {info && <RtlText style={styles.info}>{info}</RtlText>}
@@ -213,6 +232,9 @@ const styles = StyleSheet.create({
   primaryText: { color: theme.onPrimary, fontWeight: "800", fontSize: 16 },
   switch: { alignItems: "center", paddingVertical: 6 },
   switchText: { color: theme.primary, fontWeight: "700", fontSize: 14 },
+  termsRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginTop: 4 },
+  termsText: { flex: 1, fontSize: 13, color: theme.muted, lineHeight: 20 },
+  termsLink: { color: theme.primary, fontWeight: "700", textDecorationLine: "underline" },
   error: { color: theme.danger, fontSize: 13 },
   info: { color: theme.info, fontSize: 13 },
   disclaimer: { flexDirection: "row", alignItems: "center", gap: 8, justifyContent: "center" },

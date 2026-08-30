@@ -1,0 +1,30 @@
+{
+  "ios": {
+    "name": "NOVA",
+    "subtitle": "Health intelligence that knows you",
+    "description": "NOVA connects to your smartwatch, learns your personal 28-day baseline, and explains what really changed — before alerting.\n\n• Apple Health: heart rate, HRV, sleep, activity\n• Meal context from photos (not a diet app)\n• NOVA AI in Hebrew and English\n• Blood test tracking\n• Breathing exercises for stress\n\nWellness insights only — not medical advice.",
+    "keywords": ["health","HRV","sleep","Apple Watch","wellness","Hebrew","AI","smartwatch"],
+    "promotionalText": "Explain before alerting. Your body, your baseline.",
+    "supportUrl": "mailto:support@nova.health",
+    "marketingUrl": "https://nova-health.vercel.app",
+    "privacyPolicyUrl": "https://nova-health.vercel.app/legal/privacy.html",
+    "primaryCategory": "HEALTH_AND_FITNESS",
+    "secondaryCategory": "MEDICAL",
+    "ageRating": "12+",
+    "screenshots": {
+      "iphone67": ["store/screenshots/iphone-1.png", "store/screenshots/iphone-2.png", "store/screenshots/iphone-3.png"]
+    }
+  },
+  "android": {
+    "title": "NOVA — Health Intelligence",
+    "shortDescription": "Personal wellness AI. Explain before alerting.",
+    "fullDescription": "NOVA learns your personal health baseline from your smartwatch and explains changes before alerting. Hebrew + English. Not medical advice.",
+    "category": "HEALTH_AND_FITNESS",
+    "privacyPolicyUrl": "https://nova-health.vercel.app/legal/privacy.html"
+  },
+  "testFlight": {
+    "betaAppDescription": "Beta: personal health baseline + AI explanations. Feedback welcome at support@nova.health",
+    "betaFeedbackEmail": "support@nova.health",
+    "whatToTest": "Signup, Apple Health sync, dashboard, meal photo, NOVA chat, breathing exercise."
+  }
+}
