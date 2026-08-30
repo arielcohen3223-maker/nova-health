@@ -71,8 +71,8 @@ function IconBubble({
   size?: number;
 }) {
   const map = {
-    green: [C.mint, C.green],
-    orange: [C.peach, C.orange],
+    green: [C.mint, theme.primaryDark],
+    orange: [C.peach, theme.pillOrangeText],
     blue: [C.infoBg, C.blue],
     red: [C.red + "18", C.red],
   };
@@ -183,6 +183,7 @@ function MetricCard({
   status,
   tone = "green",
   chartDown = false,
+  width,
 }: {
   icon: IconName;
   label: string;
@@ -191,9 +192,10 @@ function MetricCard({
   status: string;
   tone?: "green" | "orange" | "blue" | "red";
   chartDown?: boolean;
+  width?: number;
 }) {
   return (
-    <Card style={styles.metricCard}>
+    <Card style={[styles.metricCard, width != null && { width, maxWidth: width }]}>
       <View style={styles.rowBetween}>
         <IconBubble name={icon} tone={tone} size={38} />
         <Pill text={status} tone={tone === "red" ? "red" : tone === "orange" ? "orange" : "green"} />
@@ -311,12 +313,14 @@ function Learning({ go }: { go: (s: Screen) => void }) {
 }
 
 function Home({ go }: { go: (s: Screen) => void }) {
-  const { t, locale } = useLocale();
+  const { t, locale, isRtl } = useLocale();
   const { profile } = useAuth();
   const { metrics, score, recovery } = useHealth();
   const h = t.home;
   const name = profile?.display_name?.split(" ")[0] ?? (locale === "he" ? "נועה" : "Noa");
   const greeting = h.greeting.replace(/נועה|Noa/i, name);
+  const screenW = Dimensions.get("window").width;
+  const metricW = Math.floor((screenW - 40 - 10) / 2);
   return (
     <View style={styles.screenPad}>
       <ScreenHeader title={greeting} eyebrow={h.date} right={<Pressable onPress={() => go("settings")}><IconBubble name="person-outline" /></Pressable>} />
@@ -335,13 +339,13 @@ function Home({ go }: { go: (s: Screen) => void }) {
         <QuickAction icon="chatbubble-ellipses-outline" label={h.askNova} onPress={() => go("chat")} tone="blue" />
       </View>
 
-      <View style={styles.metricsGrid}>
-        <MetricCard icon="heart-outline" label={h.rhr} value={metrics.restingHr != null ? String(metrics.restingHr) : "—"} unit="BPM" status={h.normalForYou} />
-        <MetricCard icon="pulse-outline" label="HRV" value={metrics.hrv != null ? String(metrics.hrv) : "—"} unit="ms" status={h.stable} tone="blue" />
-        <MetricCard icon="moon-outline" label={h.sleep} value={formatSleep(metrics.sleepHours)} unit={h.hours} status={h.excellent} />
-        <MetricCard icon="walk-outline" label={h.activity} value={formatSteps(metrics.steps)} unit={h.steps} status="82%" tone="orange" />
-        <MetricCard icon="thermometer-outline" label={h.temp} value={metrics.bodyTemp != null ? String(metrics.bodyTemp) : "—"} unit="°C" status={h.ok} tone="green" />
-        <MetricCard icon="flash-outline" label={h.stress} value={metrics.stressScore != null ? String(metrics.stressScore) : "—"} unit="/100" status={h.low} tone="blue" chartDown />
+      <View style={[styles.metricsGrid, isRtl && styles.metricsGridRtl]}>
+        <MetricCard width={metricW} icon="heart-outline" label={h.rhr} value={metrics.restingHr != null ? String(metrics.restingHr) : "—"} unit="BPM" status={h.normalForYou} />
+        <MetricCard width={metricW} icon="pulse-outline" label="HRV" value={metrics.hrv != null ? String(metrics.hrv) : "—"} unit="ms" status={h.stable} tone="blue" />
+        <MetricCard width={metricW} icon="moon-outline" label={h.sleep} value={formatSleep(metrics.sleepHours)} unit={h.hours} status={h.excellent} />
+        <MetricCard width={metricW} icon="walk-outline" label={h.activity} value={formatSteps(metrics.steps)} unit={h.steps} status="82%" tone="orange" />
+        <MetricCard width={metricW} icon="thermometer-outline" label={h.temp} value={metrics.bodyTemp != null ? String(metrics.bodyTemp) : "—"} unit="°C" status={h.ok} tone="green" />
+        <MetricCard width={metricW} icon="flash-outline" label={h.stress} value={metrics.stressScore != null ? String(metrics.stressScore) : "—"} unit="/100" status={h.low} tone="blue" chartDown />
       </View>
 
       <Card style={styles.recoveryCard}>
@@ -1062,8 +1066,9 @@ const styles = StyleSheet.create({
   quickRow: { flexDirection: "row-reverse", justifyContent: "space-between", gap: 8 },
   quickAction: { flex: 1, alignItems: "center", gap: 6, paddingVertical: 12, backgroundColor: C.card, borderRadius: 18, borderWidth: 1, borderColor: C.border },
   quickActionLabel: { fontSize: 11, fontWeight: "650", textAlign: "center" },
-  metricsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  metricCard: { width: "48.5%", padding: 14 },
+  metricsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, width: "100%", justifyContent: "space-between" },
+  metricsGridRtl: { flexDirection: "row-reverse" },
+  metricCard: { padding: 14, flexGrow: 0, flexShrink: 0 },
   metricLabel: { fontSize: 12, color: C.muted, marginTop: 10 },
   valueRow: { flexDirection: "row", alignItems: "baseline", gap: 5 },
   metricValue: { color: C.ink, fontSize: 26, fontWeight: "800", marginVertical: 3 },

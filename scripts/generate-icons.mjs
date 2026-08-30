@@ -66,40 +66,40 @@ function fillRoundRect(png, x, y, w, h, radius, color) {
   }
 }
 
-function drawPulse(png, cx, cy, scale) {
-  const w = 180 * scale;
-  const h = 80 * scale;
+function drawPulse(png, cx, cy, scale, stroke = 18) {
+  const w = png.width * 0.58;
+  const h = png.height * 0.22;
   const startX = cx - w / 2;
   const midY = cy;
   const points = [
     [0, 0],
-    [0.15, 0],
-    [0.22, -0.55],
-    [0.28, 0.65],
-    [0.34, -0.35],
-    [0.42, 0.15],
-    [0.55, 0],
-    [0.68, 0],
-    [0.75, -0.7],
-    [0.82, 0.85],
-    [0.88, -0.2],
+    [0.12, 0],
+    [0.2, -0.62],
+    [0.28, 0.72],
+    [0.36, -0.38],
+    [0.44, 0.12],
+    [0.56, 0],
+    [0.66, 0],
+    [0.74, -0.78],
+    [0.82, 0.92],
+    [0.9, -0.15],
     [1, 0],
   ];
+  const thick = Math.max(3, Math.round(stroke * scale));
   for (let i = 0; i < points.length - 1; i++) {
     const [x0, y0] = points[i];
     const [x1, y1] = points[i + 1];
-    const steps = Math.ceil(w * (x1 - x0));
+    const steps = Math.max(1, Math.ceil(w * (x1 - x0)));
     for (let s = 0; s <= steps; s++) {
       const t = steps === 0 ? 0 : s / steps;
       const px = Math.round(startX + w * lerp(x0, x1, t));
       const py = Math.round(midY + h * lerp(y0, y1, t));
-      for (let dy = -Math.round(5 * scale); dy <= Math.round(5 * scale); dy++) {
-        setPixel(png, px, py + dy, WHITE.r, WHITE.g, WHITE.b);
-      }
+      fillCircle(png, px, py, thick, WHITE);
     }
   }
 }
 
+/** Full-bleed icon — bold pulse, no inner box (reads clearly on home screen) */
 function createIcon(size) {
   const png = new PNG({ width: size, height: size });
   for (let y = 0; y < size; y++) {
@@ -116,12 +116,19 @@ function createIcon(size) {
     }
   }
   const scale = size / 1024;
-  fillRoundRect(png, size * 0.18, size * 0.18, size * 0.64, size * 0.64, size * 0.14, {
-    r: Math.min(255, TEAL.r + 20),
-    g: Math.min(255, TEAL.g + 20),
-    b: Math.min(255, TEAL.b + 20),
-  });
-  drawPulse(png, size / 2, size / 2, scale);
+  drawPulse(png, size / 2, size / 2, scale, 22);
+  return png;
+}
+
+/** Android adaptive — extra-large pulse in safe zone (center 66%) */
+function createAdaptiveIcon(size) {
+  const png = new PNG({ width: size, height: size });
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      setPixel(png, x, y, TEAL.r, TEAL.g, TEAL.b);
+    }
+  }
+  drawPulse(png, size / 2, size / 2, size / 1024, 28);
   return png;
 }
 
@@ -132,6 +139,6 @@ function writePng(png, filename) {
 }
 
 writePng(createIcon(1024), "icon.png");
-writePng(createIcon(1024), "adaptive-icon.png");
+writePng(createAdaptiveIcon(1024), "adaptive-icon.png");
 writePng(createIcon(512), "splash-icon.png");
 writePng(createIcon(48), "favicon.png");
