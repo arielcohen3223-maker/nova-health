@@ -11,7 +11,7 @@ export default ({ config }) => ({
   splash: {
     image: "./assets/splash-icon.png",
     resizeMode: "contain",
-    backgroundColor: "#FAFAFA",
+    backgroundColor: "#F0FAF9",
   },
   assetBundlePatterns: ["**/*"],
   ios: {
@@ -38,10 +38,10 @@ export default ({ config }) => ({
       ],
     },
   },
-  android: {
+    android: {
     adaptiveIcon: {
       foregroundImage: "./assets/adaptive-icon.png",
-      backgroundColor: "#0D9488",
+      backgroundColor: "#14B8A6",
     },
     package: "health.nova.app",
     versionCode: 1,
@@ -57,8 +57,8 @@ export default ({ config }) => ({
     name: "NOVA",
     shortName: "NOVA",
     description: "Personal health intelligence — explain before alerting.",
-    themeColor: "#0D9488",
-    backgroundColor: "#FAFAFA",
+    themeColor: "#14B8A6",
+    backgroundColor: "#F0FAF9",
     display: "standalone",
     lang: "he",
   },

@@ -41,10 +41,12 @@ const C = {
   bg: theme.bg,
   card: theme.card,
   green: theme.primary,
-  mint: theme.primaryLight,
+  mint: theme.primaryMuted,
   lime: theme.aiAccent,
   ai: theme.ai,
+  violet: theme.ai,
   orange: theme.warning,
+  coral: theme.coral,
   peach: theme.warningBg,
   red: theme.danger,
   blue: theme.info,
@@ -69,14 +71,15 @@ function IconBubble({
   size = 42,
 }: {
   name: IconName;
-  tone?: "green" | "orange" | "blue" | "red";
+  tone?: "green" | "orange" | "blue" | "red" | "violet";
   size?: number;
 }) {
   const map = {
-    green: [C.mint, theme.primaryDark],
-    orange: [C.peach, theme.pillOrangeText],
-    blue: [C.infoBg, C.blue],
-    red: [C.red + "18", C.red],
+    green: [theme.successBg, theme.success],
+    orange: [theme.coralBg, theme.coral],
+    blue: [theme.infoBg, theme.info],
+    red: [theme.dangerBg, theme.danger],
+    violet: [theme.aiBg, theme.ai],
   };
   return (
     <View style={[styles.iconBubble, { width: size, height: size, borderRadius: size / 2, backgroundColor: map[tone][0] }]}>
@@ -85,12 +88,13 @@ function IconBubble({
   );
 }
 
-function Pill({ text, tone = "green" }: { text: string; tone?: "green" | "orange" | "gray" | "red" }) {
+function Pill({ text, tone = "green" }: { text: string; tone?: "green" | "orange" | "gray" | "red" | "violet" }) {
   const colors = {
-    green: [C.mint, C.green],
-    orange: [C.peach, theme.pillOrangeText],
+    green: [theme.successBg, theme.success],
+    orange: [theme.coralBg, theme.pillOrangeText],
     gray: [theme.grayPillBg, C.muted],
     red: [theme.dangerBg, C.red],
+    violet: [theme.aiBg, theme.ai],
   };
   return (
     <View style={[styles.pill, { backgroundColor: colors[tone][0] }]}>
@@ -212,7 +216,7 @@ function MetricCard({
   );
 }
 
-function QuickAction({ icon, label, onPress, tone = "green" }: { icon: IconName; label: string; onPress: () => void; tone?: "green" | "orange" | "blue" }) {
+function QuickAction({ icon, label, onPress, tone = "green" }: { icon: IconName; label: string; onPress: () => void; tone?: "green" | "orange" | "blue" | "violet" }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.quickAction, pressed && { opacity: 0.88 }]}>
       <IconBubble name={icon} tone={tone} size={44} />
@@ -332,7 +336,7 @@ function Home({ go }: { go: (s: Screen) => void }) {
   return (
     <View style={styles.screenPad}>
       <ScreenHeader title={greeting} eyebrow={h.date} right={<Pressable onPress={() => go("settings")}><IconBubble name="person-outline" /></Pressable>} />
-      <LinearGradient colors={[C.green, theme.primaryDark]} style={styles.heroCard}>
+      <LinearGradient colors={[...theme.gradientHero]} style={styles.heroCard}>
         <View>
           <Pill text={h.statusExcellent} />
           <RtlText style={styles.heroTitle}>{h.bodyBalanced}</RtlText>
@@ -344,7 +348,7 @@ function Home({ go }: { go: (s: Screen) => void }) {
       <View style={styles.quickRow}>
         <QuickAction icon="camera-outline" label={h.photoMeal} onPress={() => go("meal")} tone="orange" />
         <QuickAction icon="leaf-outline" label={h.breathing} onPress={() => go("breathing")} tone="green" />
-        <QuickAction icon="chatbubble-ellipses-outline" label={h.askNova} onPress={() => go("chat")} tone="blue" />
+        <QuickAction icon="chatbubble-ellipses-outline" label={h.askNova} onPress={() => go("chat")} tone="violet" />
       </View>
 
       <View style={[styles.metricsGrid, isRtl && styles.metricsGridRtl]}>
@@ -499,7 +503,7 @@ const pickAndAnalyze = async () => {
           </Card>
           <Card style={styles.insightCard}>
             <View style={styles.insightTop}>
-              <IconBubble name="sparkles-outline" />
+              <IconBubble name="sparkles-outline" tone="violet" />
               <View style={{ flex: 1 }}>
                 <RtlText style={styles.eyebrow}>{m.bodyLink}</RtlText>
                 <RtlText style={styles.cardTitle}>{m.addedContext}</RtlText>
@@ -748,7 +752,7 @@ function Report() {
           </Card>
         ))}
       </View>
-      <LinearGradient colors={[C.green, theme.primaryDark]} style={styles.aiSummary}>
+      <LinearGradient colors={[...theme.gradientAi]} style={styles.aiSummary}>
         <View style={styles.aiTitle}>
           <Ionicons name="sparkles" color={C.lime} size={20} />
           <RtlText style={styles.aiTitleText}>{r.aiTitle}</RtlText>
@@ -887,7 +891,7 @@ function Chat() {
 
   return (
     <View style={[styles.screenPad, { minHeight: Dimensions.get("window").height - 160 }]}>
-      <ScreenHeader title={c.title} eyebrow={c.eyebrow} right={<IconBubble name="sparkles-outline" />} />
+      <ScreenHeader title={c.title} eyebrow={c.eyebrow} right={<IconBubble name="sparkles-outline" tone="violet" />} />
       <View style={styles.chatIntro}>
         <View style={styles.aiAvatar}><Text style={styles.aiAvatarText}>N</Text></View>
         <RtlText style={styles.chatGreeting}>{c.greeting.replace(/נועה|Noa/i, displayName?.split(" ")[0] ?? (locale === "he" ? "נועה" : "Noa"))}</RtlText>
@@ -1095,8 +1099,8 @@ export default function App() {
 }
 
 const shadow = Platform.select({
-  web: { boxShadow: "0 8px 28px rgba(13, 148, 136, 0.12)" },
-  default: { shadowColor: theme.shadow, shadowOpacity: 0.1, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
+  web: { boxShadow: "0 10px 32px rgba(20, 184, 166, 0.18)" },
+  default: { shadowColor: theme.shadow, shadowOpacity: 0.14, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
 }) as any;
 
 const styles = StyleSheet.create({
@@ -1128,7 +1132,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: C.card, borderRadius: 22, padding: 17, borderWidth: 1, borderColor: C.border, ...shadow },
   header: { flexDirection: "row-reverse", alignItems: "center", gap: 12, marginBottom: 2 },
   title: { fontSize: 28, lineHeight: 36, fontWeight: "800", letterSpacing: -0.5 },
-  eyebrow: { fontSize: 12, color: C.green, fontWeight: "700", marginBottom: 3 },
+  eyebrow: { fontSize: 12, color: theme.primaryDark, fontWeight: "800", marginBottom: 3 },
   mutedText: { color: C.muted, fontSize: 13, lineHeight: 20 },
   cardTitle: { fontSize: 16, fontWeight: "750", lineHeight: 23 },
   sectionTitle: { fontSize: 18, fontWeight: "750", marginTop: 4 },
@@ -1146,7 +1150,7 @@ const styles = StyleSheet.create({
   welcomeCopy: { textAlign: "center", fontSize: 14, color: C.muted, lineHeight: 22, maxWidth: 330, marginTop: 10 },
   watchCard: { marginVertical: 20 },
   watchGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 14 },
-  watchItem: { width: "48%", minHeight: 76, borderRadius: 16, backgroundColor: C.bg, padding: 9, flexDirection: "row", alignItems: "center", gap: 8 },
+  watchItem: { width: "48%", minHeight: 76, borderRadius: 16, backgroundColor: theme.primaryMuted, padding: 9, flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: theme.borderSoft },
   watchName: { flex: 1, color: C.ink, fontSize: 11, fontWeight: "650" },
   disclaimer: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7, marginBottom: 15 },
   disclaimerText: { color: C.muted, fontSize: 11, lineHeight: 17 },
@@ -1166,7 +1170,7 @@ const styles = StyleSheet.create({
   score: { fontWeight: "850", color: C.ink },
   scoreLabel: { fontSize: 10, color: C.muted, textAlign: "center" },
   quickRow: { flexDirection: "row-reverse", justifyContent: "space-between", gap: 8 },
-  quickAction: { flex: 1, alignItems: "center", gap: 6, paddingVertical: 12, backgroundColor: C.card, borderRadius: 18, borderWidth: 1, borderColor: C.border },
+  quickAction: { flex: 1, alignItems: "center", gap: 6, paddingVertical: 12, backgroundColor: C.card, borderRadius: 18, borderWidth: 1.5, borderColor: theme.borderSoft, ...shadow },
   quickActionLabel: { fontSize: 11, fontWeight: "650", textAlign: "center" },
   metricsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, width: "100%", justifyContent: "space-between" },
   metricsGridRtl: { flexDirection: "row-reverse" },
@@ -1250,15 +1254,15 @@ const styles = StyleSheet.create({
   aiAvatarText: { fontSize: 31, color: theme.onPrimary, fontWeight: "850" },
   chatGreeting: { textAlign: "center", fontSize: 17, fontWeight: "700", lineHeight: 25, marginTop: 13, maxWidth: 280 },
   questionRow: { gap: 8, flexDirection: "row-reverse", paddingVertical: 3 },
-  questionChip: { borderWidth: 1, borderColor: theme.borderChip, backgroundColor: C.card, paddingHorizontal: 13, paddingVertical: 10, borderRadius: 16 },
-  questionText: { fontSize: 12, color: C.green, fontWeight: "650" },
+  questionChip: { borderWidth: 1, borderColor: theme.aiAccent, backgroundColor: theme.aiBg, paddingHorizontal: 13, paddingVertical: 10, borderRadius: 16 },
+  questionText: { fontSize: 12, color: theme.ai, fontWeight: "700" },
   userBubble: { alignSelf: "flex-end", backgroundColor: C.green, borderRadius: 18, borderBottomRightRadius: 5, paddingHorizontal: 15, paddingVertical: 11, maxWidth: "82%" },
   userBubbleText: { color: theme.onPrimary, fontSize: 14 },
   novaMessage: { flexDirection: "row", gap: 8, alignItems: "flex-start" },
   aiAvatarSmall: { width: 32, height: 32, borderRadius: 11, backgroundColor: theme.ai, alignItems: "center", justifyContent: "center" },
   aiAvatarSmallText: { color: theme.onPrimary, fontWeight: "800" },
-  novaBubble: { flex: 1, borderRadius: 19, borderTopLeftRadius: 5, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, padding: 15 },
-  chatFacts: { backgroundColor: C.bg, borderRadius: 14, padding: 11, marginTop: 9, gap: 4 },
+  novaBubble: { flex: 1, borderRadius: 19, borderTopLeftRadius: 5, backgroundColor: theme.aiBg, borderWidth: 1, borderColor: theme.aiAccent, padding: 15 },
+  chatFacts: { backgroundColor: C.card, borderRadius: 14, padding: 11, marginTop: 9, gap: 4 },
   chatFact: { fontSize: 13, lineHeight: 20, fontWeight: "650" },
   chatInput: { marginTop: "auto", flexDirection: "row", alignItems: "center", gap: 9, borderRadius: 19, borderWidth: 1, borderColor: C.border, backgroundColor: C.card, padding: 7, ...shadow },
   input: { flex: 1, minHeight: 42, paddingHorizontal: 8, color: C.ink, fontSize: 13 },
@@ -1269,10 +1273,10 @@ const styles = StyleSheet.create({
   pipeRail: { width: 48, alignItems: "center" },
   pipeLine: { flex: 1, width: 2, backgroundColor: theme.pipeLine },
   pipeCard: { flex: 1, padding: 14, marginBottom: 9 },
-  bottomNav: { height: 78, position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: "rgba(255,255,255,.97)", borderTopWidth: 1, borderTopColor: C.border, flexDirection: "row-reverse", justifyContent: "space-around", paddingTop: 7, ...shadow },
+  bottomNav: { height: 78, position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: "rgba(255,255,255,0.98)", borderTopWidth: 1.5, borderTopColor: theme.borderSoft, flexDirection: "row-reverse", justifyContent: "space-around", paddingTop: 7, ...shadow },
   bottomNavLtr: { flexDirection: "row" },
   navItem: { alignItems: "center", gap: 3, minWidth: 58 },
   navIcon: { width: 36, height: 32, borderRadius: 13, alignItems: "center", justifyContent: "center" },
-  navIconActive: { backgroundColor: C.green },
+  navIconActive: { backgroundColor: theme.primaryDark },
   navText: { fontSize: 10, color: C.muted, fontWeight: "650", textAlign: "center" },
 } as any);

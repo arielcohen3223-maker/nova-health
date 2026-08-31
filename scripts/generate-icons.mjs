@@ -11,8 +11,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const assetsDir = path.join(__dirname, "..", "assets");
 fs.mkdirSync(assetsDir, { recursive: true });
 
-const TEAL = { r: 13, g: 148, b: 136 };
-const TEAL_DARK = { r: 15, g: 118, b: 110 };
+const TEAL = { r: 20, g: 184, b: 166 };
+const TEAL_DARK = { r: 13, g: 148, b: 136 };
 const WHITE = { r: 255, g: 255, b: 255 };
 
 function lerp(a, b, t) {
